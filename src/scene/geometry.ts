@@ -1,3 +1,4 @@
+import { ARMOR_SECTOR_COUNT } from '../simulation/config';
 import {
   BoxGeometry,
   CylinderGeometry,
@@ -8,7 +9,7 @@ import {
 // A bevelled annular armor tile. Local z is the machine's longitudinal axis.
 export function armorTile() {
   const shape = new Shape();
-  const half = (Math.PI / 12) * 0.94;
+  const half = (Math.PI / ARMOR_SECTOR_COUNT) * 0.94;
   shape.absarc(0, 0, 1, -half, half, false);
   shape.absarc(0, 0, 0.92, half, -half, true);
   shape.closePath();

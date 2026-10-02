@@ -1,5 +1,5 @@
 import { Matrix4, Quaternion, Vector3 } from 'three';
-import { DEMO_CUES, RING_COUNT, RING_SPACING } from './config';
+import { DEMO_CUES, RING_COUNT, RING_SPACING, ringRadius } from './config';
 import type { CameraMode, MotionPhase } from './config';
 import { terrainHeight } from './terrain';
 import { Trajectory, TRAVEL_SPEED } from './Trajectory';
@@ -53,7 +53,7 @@ export class Simulation {
     (_, i) => ({
       position: new Vector3(),
       rotation: new Quaternion(),
-      radius: 3.5 * (0.28 + 0.72 * Math.pow(1 - i / RING_COUNT, 0.36)),
+      radius: ringRadius(i),
       distance: 0,
       routeDistance: 0,
       submerged: false,

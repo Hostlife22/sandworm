@@ -30,7 +30,9 @@ do not infer a universal frame rate from one machine.
 
 The repository base path is `/sandworm/`. Update `vite.config.ts`, Playwright URLs and
 README together if the repository is renamed. Successful CI on `master` triggers
-Pages publication. Pull requests do not deploy. A manual Pages run is also available.
+Pages publication. Pull requests do not deploy. E2E is a separate manual workflow:
+**Actions → Browser tests → Run workflow**. It does not delay automatic publication.
+Run it when changing UI, animation or browser behavior. A manual Pages run is also available.
 
 ## Policies
 

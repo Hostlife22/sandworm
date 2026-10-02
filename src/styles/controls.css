@@ -1,0 +1,137 @@
+.topbar {
+  height: var(--header-height);
+  position: relative;
+  z-index: var(--z-controls);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--page-inset);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+.brand b {
+  font-weight: 500;
+}
+.brand svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  fill: none;
+}
+.machine-id {
+  margin: auto;
+  font: 8px var(--mono);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.topbar nav,
+.actions {
+  display: flex;
+  gap: var(--space-1);
+}
+.actions {
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--line-light);
+}
+.statusbar {
+  position: relative;
+  z-index: var(--z-controls);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: var(--space-2) var(--page-inset);
+  font: 8px var(--mono);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  gap: var(--space-3);
+}
+.statusbar > div {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.status-dot,
+.system-status i {
+  width: 5px;
+  height: 5px;
+  background: var(--scan);
+  display: inline-block;
+  border-radius: 50%;
+}
+.status-dot.paused {
+  background: var(--bronze);
+}
+.status-divider {
+  color: var(--line);
+}
+.state-tag {
+  color: var(--muted);
+}
+.help {
+  font-size: 7px;
+  color: var(--muted);
+}
+.xray-label {
+  color: var(--scan);
+}
+.utility-controls {
+  position: absolute;
+  right: calc(var(--page-inset) + var(--space-3));
+  bottom: calc(var(--bottom-height) + 70px);
+  z-index: var(--z-controls);
+  display: flex;
+  gap: var(--space-2);
+}
+.utility-controls button {
+  font-size: 9px;
+  min-height: 30px;
+  background: var(--panel);
+}
+.utility-controls button[aria-pressed='true'] {
+  background: var(--ink);
+}
+footer {
+  position: absolute;
+  bottom: 0;
+  left: var(--page-inset);
+  right: var(--page-inset);
+  height: 27px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font: 6px var(--mono);
+  letter-spacing: 0.07em;
+  z-index: var(--z-atlas);
+}
+footer b {
+  font-size: 9px;
+  letter-spacing: 3px;
+  margin-left: var(--space-3);
+}
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--space-4);
+  z-index: 100;
+  background: var(--paper);
+  padding: var(--space-3);
+  color: var(--ink);
+}
+.skip-link:focus {
+  top: var(--space-2);
+}
+.atlas-hidden .utility-controls {
+  bottom: 50px;
+}

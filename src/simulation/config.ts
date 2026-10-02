@@ -31,6 +31,11 @@ export const MACHINE = {
 } as const;
 export const RING_COUNT = 36;
 export const RING_SPACING = 1.38;
+export const DRILL_BLADE_COUNT = 40;
+export const ARMOR_SECTOR_COUNT = 12;
+export function ringRadius(index: number): number {
+  return 3.5 * (0.28 + 0.72 * Math.pow(1 - index / RING_COUNT, 0.36));
+}
 export const DEMO_CUES: ReadonlyArray<{
   at: number;
   camera: CameraMode;

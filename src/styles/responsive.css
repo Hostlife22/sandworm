@@ -1,0 +1,351 @@
+@media (min-width: 1650px) {
+  :root {
+    --left-width: 280px;
+    --right-width: 250px;
+    --bottom-height: 195px;
+    --page-inset: 36px;
+  }
+  .specifications h1 {
+    font-size: calc(var(--left-width) * 0.107);
+  }
+  .panel h2 {
+    font-size: 12px;
+  }
+  dl > div {
+    font-size: 14px;
+  }
+  .systems li {
+    font-size: 12px;
+  }
+  .terrain-panel {
+    width: 270px;
+  }
+  .ring-detail ol {
+    font-size: 10px;
+  }
+  .machine-id {
+    font-size: 10px;
+  }
+  .topbar button {
+    font-size: 13px;
+  }
+  .scene-caption {
+    left: 290px;
+  }
+}
+@media (max-width: 1200px) {
+  :root {
+    --left-width: 210px;
+    --right-width: 185px;
+    --page-inset: 20px;
+    --bottom-height: 155px;
+  }
+  .brand b,
+  .machine-id,
+  .help {
+    display: none;
+  }
+  .brand {
+    margin-right: auto;
+  }
+  .topbar {
+    gap: 8px;
+  }
+  .topbar button {
+    padding: 0 9px;
+  }
+  .specifications h1 {
+    font-size: calc(var(--left-width) * 0.107);
+  }
+  .subtitle {
+    font-size: 9px;
+  }
+  dl > div {
+    grid-template-columns: 73px 1fr;
+    font-size: 11px;
+  }
+  .terrain-panel {
+    width: 200px;
+  }
+  .head-panel .systems li {
+    font-size: 9px;
+  }
+  .bottom-panels {
+    grid-template-columns: 2.5fr 1fr 1fr;
+    gap: 8px;
+  }
+  .ring-detail li {
+    font-size: 7.5px;
+    gap: 4px;
+  }
+  .panel {
+    padding: 8px;
+  }
+  .panel h2 {
+    font-size: 9px;
+  }
+  .scene-caption {
+    left: 215px;
+  }
+  .eyebrow {
+    font-size: 7px;
+  }
+}
+@media (max-width: 767px) {
+  :root {
+    --page-inset: 16px;
+    --header-height: 180px;
+    --text-xs: 12px;
+    --text-sm: 14px;
+  }
+  .app {
+    height: auto;
+    min-height: 100dvh;
+    overflow: clip;
+  }
+  .topbar {
+    height: var(--header-height);
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: start;
+    gap: 8px;
+    background: var(--paper);
+  }
+  .brand {
+    width: 100%;
+    height: 32px;
+    font-size: 13px;
+  }
+  .brand b {
+    display: inline;
+  }
+  .topbar nav {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+  }
+  .topbar button {
+    padding: 0 4px;
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .actions {
+    padding: 0;
+    border: 0;
+    width: 100%;
+    gap: 8px;
+  }
+  .actions button {
+    flex: 1;
+  }
+  .statusbar {
+    margin: 8px 16px;
+    height: 30px;
+    font-size: 8px;
+  }
+  .statusbar > div {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .state-tag {
+    font-size: 7px;
+  }
+  .viewport {
+    position: relative;
+    inset: auto;
+    height: 430px;
+    touch-action: none;
+    margin-top: 4px;
+  }
+  .coordinate-frame {
+    display: none;
+  }
+  .atlas {
+    position: relative;
+    margin: 0;
+    min-height: 0;
+    grid-template-rows: none;
+    inset: auto;
+    padding: 20px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    pointer-events: auto;
+  }
+  .left-panels {
+    display: contents;
+  }
+  .specifications,
+  .head-panel,
+  .terrain-panel {
+    grid-column: auto;
+    grid-row: auto;
+    margin-left: 0;
+    position: relative;
+    inset: auto;
+    width: auto;
+  }
+  .specifications {
+    padding: 0 4px;
+  }
+  .specifications h1 {
+    font-size: clamp(25px, 7.4vw, 36px);
+  }
+  .eyebrow {
+    font-size: 9px;
+  }
+  .subtitle {
+    font-size: 12px;
+  }
+  dl > div {
+    font-size: 16px;
+    grid-template-columns: 115px 1fr;
+    margin-bottom: 10px;
+  }
+  dt {
+    font-size: 12px;
+  }
+  .region {
+    max-width: 100%;
+  }
+  .region svg {
+    height: 115px;
+  }
+  .region > div {
+    font-size: 8px;
+  }
+  .panel {
+    padding: 16px;
+  }
+  .panel h2 {
+    font-size: 13px;
+  }
+  .panel h2 > span {
+    font-size: 10px;
+  }
+  .head-panel > svg {
+    max-height: 300px;
+  }
+  .head-panel .systems li {
+    font-size: 14px;
+  }
+  .systems li > span {
+    font-size: 9px;
+  }
+  .systems h3 {
+    font-size: 14px;
+  }
+  .system-status {
+    font-size: 9px;
+  }
+  .terrain-panel svg {
+    max-height: 240px;
+  }
+  .map-legend {
+    font-size: 9px;
+    gap: 8px;
+  }
+  .bottom-panels {
+    grid-column: auto;
+    grid-row: auto;
+    position: relative;
+    inset: auto;
+    height: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    gap: 16px;
+  }
+  .bottom-panels > .panel {
+    min-height: 190px;
+  }
+  .profile-panel > svg {
+    height: auto;
+  }
+  .ring-detail {
+    height: 180px;
+  }
+  .ring-detail li {
+    font-size: 12px;
+    gap: 8px;
+  }
+  .ring-detail li:before {
+    font-size: 8px;
+  }
+  .cycle {
+    height: 160px;
+  }
+  .cycle > div > span {
+    font-size: 9px;
+  }
+  .scene-caption {
+    display: none;
+  }
+  .utility-controls {
+    position: absolute;
+    top: 580px;
+    bottom: auto;
+    right: 16px;
+    left: 16px;
+    justify-content: space-between;
+  }
+  .utility-controls button {
+    min-height: 44px;
+    font-size: 11px;
+  }
+  .callout {
+    display: none;
+  }
+  footer {
+    position: relative;
+    inset: auto;
+    margin: 0 16px;
+    height: 50px;
+    font-size: 7px;
+  }
+  footer > span:first-child {
+    max-width: 130px;
+  }
+  footer > span:last-child {
+    display: none;
+  }
+  .atlas-hidden .utility-controls {
+    bottom: auto;
+  }
+  .atlas-hidden .viewport {
+    height: calc(100dvh - 264px);
+    min-height: 430px;
+  }
+  .loading,
+  .scene-fallback {
+    width: 80%;
+    font-size: 10px;
+  }
+  .head-panel .systems {
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (max-width: 767px) {
+  .map-datum {
+    font-size: 9px;
+  }
+  .ring-detail li {
+    font-size: 12px;
+  }
+  .region svg {
+    height: auto;
+    max-height: 150px;
+  }
+}

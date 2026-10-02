@@ -71,6 +71,8 @@ by the application or included in the production build.
 
 GitHub Actions runs quality checks, then publishes `master` through the reusable
 Pages workflow. Pull requests do not deploy; manual publication is also available.
+E2E runs separately through the **Browser tests** workflow (`workflow_dispatch` only).
+Automatic CI retains formatting, lint, TypeScript, unit tests and the production build.
 See the repository Actions history for deployment results. Source video rights are separate from the MIT-licensed implementation.
 
 ## Recorded checks and performance
@@ -78,8 +80,13 @@ See the repository Actions history for deployment results. Source video rights a
 2026-10-02:
 
 - `npm run check`: passed (format, lint, strict types, 14 unit tests and production build).
-- `npm run test:e2e`: 7 passed, including console/shader error assertions.
-- Updated eleven captures, including two frames from the fixed Outpost camera.
+- `npm run test:e2e`: 14 passed, including console/shader error assertions, diagram motion/pause,
+  six viewport sizes and scrolling to the lower drawings.
+- After module and stylesheet decomposition, six affected browser cases passed
+  again: keyboard, fallback, subsurface/mobile captures, camera interruption, atlas
+  animation/pause and responsive layout/scrolling.
+- Updated fourteen captures, including fixed-camera travel, diagram phases and
+  access to the lower drawings in a 720 px high window.
 
 Initial delivery checks (before the motion/material revision): a clean `npm ci` and
 `npm audit` reported zero vulnerabilities. Production preview loaded the canvas,
@@ -89,7 +96,7 @@ Dependencies and the production hook guard are unchanged in this revision.
 The dedicated moving-frame benchmark samples 35 animation-frame intervals after
 warm-up, without screenshots during the sampling window. At 1440 × 1000 and DPR 1,
 Chromium reported **ANGLE / Vulkan SwiftShader Device (Subzero)**: software rendering.
-Measured median was **749.9 ms/frame**, p95 **883.4 ms/frame** (about 1.3 frames/s at the
+Measured median was **1,250 ms/frame**, p95 **1,683.3 ms/frame** (about 0.8 frames/s at the
 median), with **26 draw calls** and **361,784 triangles** including active shadow work.
 This is a slow software-rendering result, not a hardware GPU benchmark or a promised
 frame rate. Smooth interactive use requires hardware acceleration; hardware FPS has

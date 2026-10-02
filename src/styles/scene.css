@@ -1,0 +1,132 @@
+.app {
+  height: auto;
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  background: var(--paper);
+}
+.viewport {
+  position: absolute;
+  inset: var(--header-height) 0 0;
+  z-index: var(--z-scene);
+  touch-action: none;
+}
+.viewport canvas {
+  display: block;
+}
+.coordinate-frame {
+  position: absolute;
+  inset: 90px var(--page-inset) calc(var(--bottom-height) + 39px);
+  border: 1px solid var(--line-light);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.65;
+}
+.coordinate-frame:before,
+.coordinate-frame:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--muted) 0 1px,
+    transparent 1px 17px
+  );
+}
+.coordinate-frame:after {
+  right: 0;
+}
+.northing {
+  position: absolute;
+  right: -16px;
+  top: var(--space-3);
+  writing-mode: vertical-rl;
+  font: 7px var(--mono);
+}
+.easting {
+  position: absolute;
+  bottom: -14px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font: 7px var(--mono);
+  letter-spacing: 1.4em;
+}
+.callout {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  width: 170px;
+  transform: translate(6px, -44px);
+  transition: opacity 250ms;
+  pointer-events: none;
+}
+.callout.left {
+  transform: translate(-176px, -44px);
+  flex-direction: row-reverse;
+}
+.callout i {
+  display: block;
+  width: 45px;
+  height: 30px;
+  border-top: 1px solid var(--muted);
+  transform: skewY(-27deg);
+  transform-origin: bottom left;
+  opacity: 0.65;
+}
+.callout.left i {
+  transform: skewY(27deg);
+}
+.callout span {
+  font: 500 9px var(--sans);
+  text-transform: uppercase;
+  max-width: 125px;
+  text-shadow: 0 1px 3px var(--paper);
+}
+.callout small {
+  display: block;
+  font: 5px var(--mono);
+  color: var(--muted);
+  margin-top: 3px;
+}
+.loading,
+.scene-fallback {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  max-width: 400px;
+  z-index: 2;
+  font: 12px var(--mono);
+}
+.loading span {
+  display: block;
+  font-size: 9px;
+  margin-top: var(--space-3);
+  color: var(--muted);
+}
+.scene-fallback {
+  background: var(--paper);
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+}
+.scene-fallback h2 {
+  font: 28px var(--sans);
+}
+.scene-fallback p {
+  font: 13px/1.6 var(--sans);
+}
+.atlas-hidden .coordinate-frame {
+  opacity: 0;
+}
+.annotation-anchor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}

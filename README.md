@@ -78,12 +78,14 @@ src/
   App.tsx                  Composition and initial reduced-motion preference
   simulation/
     config.ts              Typed specifications, cameras and reference tour
-    Simulation.ts          Commands, UI store, clock, arc-length solver, poses
+    Simulation.ts          Commands, UI store, clock and segment poses
     Trajectory.ts          Closed world route and cached arc-length lookup
+    mapProjection.ts       Shared world/map coordinate conversion
     terrain.ts             Shared terrain equation and deterministic random seed
   scene/
     Scene.tsx              Canvas, lighting, fog, loading and WebGL fallback
-    Machine.tsx            Instanced armor, frame, drill and articulated rods
+    Machine.tsx            Machine resource ownership and composition
+    machine/               Batch construction and per-frame instanced rendering
     geometry.ts            Reusable bevelled annular geometry
     materials.ts           Physical materials and subsurface scan shader
     surfaceTexture.ts      Deterministic panel wear and roughness texture
@@ -92,9 +94,15 @@ src/
     Dust.tsx               Bounded contact particle pool
     CameraRig.tsx          Six views, smoothing and input interruption
     Callouts.tsx           Projected labels and conservative occlusion
-  ui/                      Controls, atlas layout and local SVG diagrams
-  styles.css               Tokens, desktop atlas and mobile document layout
+  ui/                      Controls, atlas layout and animated SVG drawings
+    Panel.tsx              Shared technical-panel shell
+    diagrams/              Six focused diagram components and pure geometry
+    hooks/                 SVG animation driven by the simulation clock
+  styles.css               Stylesheet entry point
+  styles/                  Tokens, base, controls, scene, atlas, drawings, responsive
 ```
+
+[Architecture and ownership](docs/ARCHITECTURE.md) explains the module boundaries.
 
 Per-frame state is mutable and outside React. `useSyncExternalStore` subscribes only
 to UI commands. The renderer caps DPR at 1.5 and shadows at 1024²; tiny fasteners are
@@ -115,7 +123,7 @@ npm run test:e2e
 npm run check           # Format check + lint + types + unit tests + build
 ```
 
-Playwright uses a dedicated port, 5186, and captures eleven reference views under
+Playwright uses a dedicated port, 5186, and captures fourteen reference views under
 `docs/screenshots/`. Tests include keyboard input, pause/resume, reduced motion,
 WebGL fallback, mobile overflow and travel past a stationary camera. Pure tests cover segment spacing, quaternions,
 continuity, repeatable poses, frame-rate-independent travel, head/tail path agreement,
@@ -123,7 +131,10 @@ terrain mask accuracy and tour commands.
 
 [Validation and visual comparison](docs/VALIDATION.md) records actual results and
 limitations. [Motion and materials review](docs/MOTION_REVIEW.md) explains the
-forward-travel correction and includes a fixed-camera comparison. GitHub CI runs `npm ci`, all quality checks and Chromium tests. Successful checks on `master` automatically call **Publish GitHub Pages** and
+forward-travel correction and includes a fixed-camera comparison.
+[Atlas review](docs/ATLAS_REVIEW.md) compares the diagram animation and layout. Push and pull-request CI runs `npm ci` and `npm run check`. Chromium E2E tests run
+only through **Actions → Browser tests → Run workflow**, or locally with
+`npm run test:e2e`. Successful checks on `master` automatically call **Publish GitHub Pages** and
 deploy `/sandworm/`. Pull requests run checks without publishing. The Pages workflow
 can also be started manually; GitHub Actions must be selected as the Pages source.
 
@@ -135,6 +146,8 @@ modified keystrokes; focused buttons retain their native keyboard behavior.
 Reduced-motion users start in a static reference pose and explicitly press Play to
 animate. Camera transitions become immediate under that preference.
 
+On short desktop windows, the atlas grows with its content; scroll over the panels
+to reach the lower drawings. Panels keep their spacing instead of overlapping.
 On phones, the scene has its own gesture area; specifications and diagrams follow
 in the scrollable document. Camera, X-ray and playback controls remain above the
 scene. The viewport handles drag/pinch; scroll on the surrounding document to read

@@ -71,6 +71,3 @@ export class Trajectory {
     return (low + alpha) / SAMPLE_COUNT;
   }
 }
-export function mapPosition(x: number, z: number): [number, number] {
-  return [17 + (x + 90) * 0.92, 13 + (z + 115) * 0.8];
-}

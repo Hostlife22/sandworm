@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { MACHINE } from '../simulation/config';
+import { MACHINE, DRILL_BLADE_COUNT } from '../simulation/config';
 import type { Simulation } from '../simulation/Simulation';
 import {
   CycleDiagram,
   HeadDiagram,
-  Panel,
   ProfileDiagram,
   RegionMap,
   RingDiagram,
   TerrainMap,
-} from './Diagrams';
+} from './diagrams';
+import { Panel } from './Panel';
 export function Atlas({ simulation }: { simulation: Simulation }) {
   const live = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -21,35 +21,46 @@ export function Atlas({ simulation }: { simulation: Simulation }) {
   }, [simulation]);
   return (
     <div className="atlas">
-      <aside className="specifications">
-        <div className="eyebrow">
-          FIELD ENGINEERING ATLAS <span>VOL. 07 / 2194</span>
-        </div>
-        <h1>
-          {MACHINE.name} <em>{MACHINE.revision}</em>
-        </h1>
-        <p className="subtitle">{MACHINE.subtitle}</p>
-        <div className="title-rule">
-          <span>01 — MACHINE OVERVIEW</span>
-          <span>CLASS IV</span>
-        </div>
-        <dl>
-          {Object.entries(MACHINE.specifications).map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
+      <div className="left-panels">
+        <aside className="specifications">
+          <h1>
+            {MACHINE.name} <em>{MACHINE.revision}</em>
+          </h1>
+          <p className="subtitle">{MACHINE.subtitle}</p>
+          <dl>
+            {Object.entries(MACHINE.specifications).map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="region">
+            <RegionMap />
+            <div>
+              <i />
+              PRIMARY DEPLOYMENT ZONE <span>ERG–07</span>
             </div>
-          ))}
-        </dl>
-        <div className="region">
-          <RegionMap />
-          <div>
-            <i />
-            PRIMARY DEPLOYMENT ZONE <span>ERG–07</span>
           </div>
-        </div>
-        <p className="fiction">CONCEPT STUDY · FICTIONAL SPECIFICATIONS</p>
-      </aside>
+        </aside>
+        <Panel
+          title="Terrain schematic — surface map"
+          number="03"
+          className="terrain-panel"
+        >
+          <TerrainMap simulation={simulation} />
+          <p className="map-datum">
+            CONTOUR INTERVAL: 10 m<br />
+            DATUM: 2,100 m SEA LEVEL
+          </p>
+          <div className="map-legend">
+            <span>△ AEI OUTPOST</span>
+            <span>○ SURVEY BEACON</span>
+            <span>┄ SANDWORM PATH</span>
+            <span>━ LIVE BODY / HEADING</span>
+          </div>
+        </Panel>
+      </div>
       <Panel
         title="Head section — cross view"
         number="02"
@@ -62,7 +73,7 @@ export function Atlas({ simulation }: { simulation: Simulation }) {
             {[
               'Rotary drill assembly',
               'Percussive hammer ring',
-              'Displacement blades (×40)',
+              `Displacement blades (×${DRILL_BLADE_COUNT})`,
               'Intake auger cone',
               'Debris transport conduit',
               'Terrain sensor array',
@@ -79,19 +90,6 @@ export function Atlas({ simulation }: { simulation: Simulation }) {
           </div>
         </div>
       </Panel>
-      <Panel
-        title="Terrain schematic — surface map"
-        number="03"
-        className="terrain-panel"
-      >
-        <TerrainMap simulation={simulation} />
-        <div className="map-legend">
-          <span>△ AEI OUTPOST</span>
-          <span>○ SURVEY BEACON</span>
-          <span>┄ MACHINE ROUTE</span>
-          <span>● LIVE POSITION</span>
-        </div>
-      </Panel>
       <div className="scene-caption">
         <span>PLATE 004 / AUTONOMOUS EXCAVATION SYSTEMS</span>
         <span ref={live}>0000 s / SURFACE DATUM</span>
@@ -105,7 +103,7 @@ export function Atlas({ simulation }: { simulation: Simulation }) {
           <ProfileDiagram simulation={simulation} />
         </Panel>
         <Panel title="Segment detail — typical ring" number="05">
-          <RingDiagram />
+          <RingDiagram simulation={simulation} />
         </Panel>
         <Panel title="Locomotion cycle" number="06">
           <CycleDiagram simulation={simulation} />

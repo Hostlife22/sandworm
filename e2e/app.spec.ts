@@ -11,12 +11,17 @@ async function settle(page: Page) {
     { timeout: 30000 },
   );
 }
-async function freeze(page: Page, time = 0) {
-  await page.evaluate((t) => {
-    const s = window.__SANDWORM__!;
-    if (!s.getSnapshot().paused) s.command({ type: 'pause' });
-    s.seek(t);
-  }, time);
+async function freeze(page: Page, time = 0, instantCamera = false) {
+  await page.evaluate(
+    ({ t, instantCamera }) => {
+      const s = window.__SANDWORM__!;
+      // Capture cases need settled geometry; camera tweening is tested separately.
+      if (instantCamera) s.reducedMotion = true;
+      if (!s.getSnapshot().paused) s.command({ type: 'pause' });
+      s.seek(t);
+    },
+    { t: time, instantCamera },
+  );
   await page.waitForTimeout(400);
 }
 test('keyboard, pause, camera interrupts, X-ray and inspection on pause', async ({
@@ -121,7 +126,7 @@ for (const [camera, name] of [
       if (m.type() === 'error') errors.push(m.text());
     });
     await ready(page);
-    await freeze(page);
+    await freeze(page, 0, true);
     await page.getByRole('button', { name: camera, exact: true }).click();
     await settle(page);
     await expect(page.locator('canvas')).toBeVisible();
@@ -142,7 +147,7 @@ test('subsurface and mobile screenshots and renderer measurements', async ({
     if (m.type() === 'error') errors.push(m.text());
   });
   await ready(page);
-  await freeze(page);
+  await freeze(page, 0, true);
   await page.getByRole('button', { name: 'side', exact: true }).click();
   await page.getByRole('button', { name: 'X-RAY', exact: true }).click();
   await freeze(page, 7);
@@ -285,7 +290,7 @@ test('measure moving WebGL frames after warm-up', async ({
 test('machine travels past a fixed outpost camera', async ({ page }) => {
   test.setTimeout(90000);
   await ready(page);
-  await freeze(page);
+  await freeze(page, 0, true);
   await page.getByRole('button', { name: 'outpost', exact: true }).click();
   await settle(page);
   await page.waitForFunction(() => {
@@ -310,4 +315,140 @@ test('machine travels past a fixed outpost camera', async ({ page }) => {
     Math.hypot(...after.camera.map((v, i) => v - before.camera[i])),
   ).toBeLessThan(0.01);
   await page.screenshot({ path: 'docs/screenshots/11-travel-later.png' });
+});
+
+test('atlas drawings articulate together and freeze on pause', async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await ready(page);
+  await freeze(page, 0, true);
+  await settle(page);
+  const selectors = [
+    '[data-head-rotor]',
+    '[data-head-auger]',
+    '[data-head-index]',
+    '[data-profile-ring="12"]',
+    '[data-ring-tile="3"] [data-shell]',
+    '[data-map-body]',
+    '[data-map-head]',
+    '[data-step="0"] [data-cycle-ring="12"]',
+    '[data-step="0"] [data-cycle-arrow]',
+  ];
+  const read = () =>
+    page.evaluate(
+      (selectors) =>
+        selectors.map((selector) => {
+          const element = document.querySelector(selector)!;
+          return element.getAttribute('transform') ?? element.getAttribute('d');
+        }),
+      selectors,
+    );
+  await expect.poll(async () => (await read()).every(Boolean)).toBe(true);
+  const before = await read();
+  await page.waitForTimeout(700);
+  expect(await read()).toEqual(before);
+  const bounds = await page.evaluate(() => {
+    const region = document.querySelector('.region')!.getBoundingClientRect();
+    const terrain = document
+      .querySelector('.terrain-panel')!
+      .getBoundingClientRect();
+    const bottoms = [
+      ...document.querySelectorAll('.bottom-panels > .panel'),
+    ].map((p) => p.getBoundingClientRect().bottom);
+    return {
+      regionBottom: region.bottom,
+      terrainTop: terrain.top,
+      bottom: Math.max(...bottoms),
+      height: innerHeight,
+    };
+  });
+  expect(bounds.regionBottom + 8).toBeLessThan(bounds.terrainTop);
+  expect(bounds.bottom).toBeLessThanOrEqual(bounds.height - 27);
+  await page.screenshot({ path: 'docs/screenshots/12-atlas-reference.png' });
+  await freeze(page, 2);
+  await expect
+    .poll(async () => (await read()).every((value, i) => value !== before[i]))
+    .toBe(true);
+  const after = await read();
+  await page.waitForTimeout(700);
+  expect(await read()).toEqual(after);
+  await settle(page);
+  await page.screenshot({ path: 'docs/screenshots/13-atlas-moving-phase.png' });
+  await page.getByRole('button', { name: '▶ PLAY', exact: true }).click();
+  await expect
+    .poll(async () => (await read()).every((value, i) => value !== after[i]))
+    .toBe(true);
+  await page.getByRole('button', { name: 'Ⅱ PAUSE', exact: true }).click();
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const map = await page.locator('.terrain-panel').boundingBox();
+  await page.mouse.move(map!.x + 20, Math.min(map!.y + 25, 690));
+  await page.mouse.wheel(0, 650);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+  await expect(page.locator('.profile-panel')).toBeInViewport({ ratio: 1 });
+  await page.screenshot({ path: 'docs/screenshots/14-atlas-short-window.png' });
+  expect(errors).toEqual([]);
+});
+
+test('atlas panels remain separate on short, wide and mobile screens', async ({
+  page,
+}) => {
+  // Layout must also hold when the 3D viewport cannot start. No GPU is needed here.
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+      value: function (
+        this: HTMLCanvasElement,
+        type: string,
+        options: unknown,
+      ) {
+        return type.startsWith('webgl')
+          ? null
+          : Reflect.apply(original, this, [type, options]);
+      },
+    });
+  });
+  await page.goto('./');
+  await page.getByRole('heading', { name: 'SANDWORM MK-X' }).waitFor();
+  for (const [width, height] of [
+    [1920, 900],
+    [1440, 900],
+    [1280, 720],
+    [1024, 768],
+    [768, 1024],
+    [390, 844],
+  ]) {
+    await page.setViewportSize({ width, height });
+    const layout = await page.evaluate(() => {
+      const box = (selector: string) => {
+        const r = document.querySelector(selector)!.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+      };
+      return {
+        region: box('.region'),
+        terrain: box('.terrain-panel'),
+        head: box('.head-panel'),
+        bottom: box('.bottom-panels'),
+        documentWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(
+      layout.region.bottom + 8,
+      `${width}×${height}: regional and terrain maps`,
+    ).toBeLessThanOrEqual(layout.terrain.top);
+    expect(
+      layout.terrain.bottom + 8,
+      `${width}×${height}: terrain and lower drawings`,
+    ).toBeLessThanOrEqual(layout.bottom.top);
+    expect(
+      layout.head.bottom + 8,
+      `${width}×${height}: head and lower drawings`,
+    ).toBeLessThanOrEqual(layout.bottom.top);
+    expect(
+      layout.documentWidth,
+      `${width}×${height}: horizontal overflow`,
+    ).toBe(width);
+  }
 });

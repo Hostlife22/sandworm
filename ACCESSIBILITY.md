@@ -16,6 +16,8 @@ not a claim of WCAG conformance.
 - Pause stops machine motion, particles and technical animation while leaving camera
   inspection available. Users with `prefers-reduced-motion` start paused and must
   explicitly choose Play. Their camera transitions are immediate.
+- In short desktop windows, scroll over a panel to reach the lower drawings.
+  Free viewport space retains camera zoom controls.
 - On narrow screens, the viewport has a dedicated gesture area and the atlas follows
   in the scrolling page. The 390 px layout is checked for horizontal overflow.
 - Text specifications and labeled diagrams accompany the canvas. If WebGL is

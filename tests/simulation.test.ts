@@ -1,10 +1,7 @@
+import { mapPosition } from '../src/simulation/mapProjection';
 import { describe, expect, it } from 'vitest';
 import { Vector3 } from 'three';
-import {
-  Trajectory,
-  TRAVEL_SPEED,
-  mapPosition,
-} from '../src/simulation/Trajectory';
+import { Trajectory, TRAVEL_SPEED } from '../src/simulation/Trajectory';
 import { Simulation } from '../src/simulation/Simulation';
 import { CAMERAS, RING_COUNT, RING_SPACING } from '../src/simulation/config';
 import { terrainGLSL, terrainHeight, TERRAIN } from '../src/simulation/terrain';

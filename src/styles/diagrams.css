@@ -1,0 +1,172 @@
+svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+svg text {
+  font-family: var(--sans);
+  font-size: 7px;
+  fill: var(--ink);
+  stroke: none;
+  letter-spacing: 0.035em;
+}
+.land {
+  fill: var(--map-land);
+  stroke: var(--map-coast);
+  stroke-width: 0.5;
+}
+.zone {
+  fill: none;
+  stroke: var(--bronze);
+  stroke-width: 0.7;
+  stroke-dasharray: 2 2;
+}
+.drawing {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: var(--diagram-stroke);
+}
+.diagram-grid {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 0.55;
+}
+.dimension {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 0.55;
+}
+.contours {
+  fill: none;
+  stroke: var(--bronze);
+  stroke-width: 0.4;
+  opacity: 0.6;
+}
+.route {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.1;
+  stroke-dasharray: 3 3;
+}
+.station {
+  fill: var(--bronze);
+}
+.earth {
+  fill: var(--line-light);
+  opacity: 0.45;
+}
+.faint {
+  opacity: 0.65;
+  font-size: 6px;
+}
+.diagram-paper {
+  fill: var(--paper);
+}
+.diagram-metal {
+  fill: var(--diagram-metal);
+}
+.diagram-solid {
+  fill: var(--diagram-solid);
+}
+.fine-detail,
+.hatching {
+  stroke: var(--muted);
+  stroke-width: var(--diagram-fine-stroke);
+  fill: none;
+}
+.soil-grain {
+  stroke: var(--bronze);
+  stroke-width: 0.45;
+}
+.head-index {
+  fill: none;
+  stroke: var(--bronze);
+  stroke-width: 0.65;
+}
+.head-index .index-band {
+  stroke-width: 5;
+  opacity: 0.55;
+}
+.auger {
+  stroke-width: 2;
+}
+.highland {
+  fill: none;
+  stroke: var(--map-coast);
+  stroke-width: 0.4;
+  opacity: 0.65;
+}
+.map-lake {
+  fill: var(--paper);
+  stroke: var(--map-coast);
+  stroke-width: 0.25;
+}
+.survey-line {
+  fill: none;
+  stroke: var(--bronze);
+  stroke-dasharray: 1 2;
+  stroke-width: 0.55;
+}
+svg .map-label {
+  font-size: 4.5px;
+  letter-spacing: 0.1em;
+  fill: var(--muted);
+}
+.map-grid {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 0.3;
+  opacity: 0.4;
+}
+.major-contour {
+  stroke-width: 0.85;
+}
+.survey-beacon {
+  fill: var(--paper);
+  stroke: var(--muted);
+  stroke-width: 0.65;
+}
+.map-machine {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.2;
+  stroke-dasharray: 1.4 0.8;
+}
+.map-direction {
+  fill: var(--ink);
+  stroke: var(--paper);
+  stroke-width: 0.5;
+}
+.datum-line {
+  fill: none;
+  stroke: var(--bronze);
+  stroke-width: 0.45;
+  stroke-dasharray: 2 2;
+}
+.profile-machine {
+  stroke-width: 0.6;
+}
+.profile-drive {
+  fill: none;
+  stroke: var(--diagram-solid);
+  stroke-width: 6;
+}
+.diagram-title {
+  font-size: 7px;
+  font-weight: 600;
+}
+.profile-panel .faint {
+  font-size: 5.5px;
+}
+.ring-actuator {
+  stroke: var(--diagram-solid);
+  stroke-width: 2.5;
+}
+.cycle .drawing {
+  stroke-width: 0.4;
+}
+.cycle svg .cycle-label {
+  font-size: 4.5px;
+  letter-spacing: 0.08em;
+  fill: var(--muted);
+}
