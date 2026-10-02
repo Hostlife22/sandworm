@@ -31,7 +31,6 @@ export const MACHINE = {
 } as const;
 export const RING_COUNT = 36;
 export const RING_SPACING = 1.38;
-export const CYCLE_DURATION = (Math.PI * 2) / 0.24;
 export const DEMO_CUES: ReadonlyArray<{
   at: number;
   camera: CameraMode;

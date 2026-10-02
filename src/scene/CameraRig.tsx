@@ -5,6 +5,7 @@ import { OrbitControls } from '@react-three/drei';
 import { Vector3 } from 'three';
 import type { Simulation } from '../simulation/Simulation';
 import { terrainHeight } from '../simulation/terrain';
+const UP = new Vector3(0, 1, 0);
 export function CameraRig({ simulation }: { simulation: Simulation }) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const manual = useRef(false);
@@ -40,9 +41,13 @@ export function CameraRig({ simulation }: { simulation: Simulation }) {
           break;
         case 'chase':
           scratch.position.set(
-            tail.x - 17,
-            Math.max(tail.y + 10, 9),
-            tail.z + 7,
+            tail.x -
+              Math.cos(simulation.heading) * 17 +
+              Math.sin(simulation.heading) * 7,
+            Math.max(tail.y + 10, terrainHeight(tail.x, tail.z) + 9),
+            tail.z +
+              Math.sin(simulation.heading) * 17 +
+              Math.cos(simulation.heading) * 7,
           );
           scratch.target.copy(head).lerp(tail, 0.35);
           scratch.target.y = Math.max(2, scratch.target.y);
@@ -52,13 +57,24 @@ export function CameraRig({ simulation }: { simulation: Simulation }) {
           scratch.target.set(5, 3, -3);
           break;
         case 'orbit': {
-          const angle = simulation.poseTime * 0.085 + 0.45;
+          const angle = simulation.mechanismAngle * 0.35 + 0.45;
           scratch.position.set(Math.sin(angle) * 54, 21, Math.cos(angle) * 54);
           break;
         }
       }
       if (size.width < 768 && ui.camera !== 'chase' && ui.camera !== 'outpost')
         scratch.position.multiplyScalar(1.4);
+      if (ui.camera !== 'chase' && ui.camera !== 'outpost') {
+        // Track the moving body; stations and terrain stay in world coordinates.
+        scratch.position
+          .sub(simulation.initialFocus)
+          .applyAxisAngle(UP, simulation.heading)
+          .add(simulation.focus);
+        scratch.target
+          .sub(simulation.initialFocus)
+          .applyAxisAngle(UP, simulation.heading)
+          .add(simulation.focus);
+      }
       const alpha = simulation.reducedMotion
         ? 1
         : 1 - Math.exp(-Math.min(delta, 0.25) * 3.3);

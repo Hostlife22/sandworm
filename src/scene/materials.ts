@@ -6,21 +6,23 @@ import {
   NotEqualStencilFunc,
   ReplaceStencilOp,
 } from 'three';
+import type { Texture } from 'three';
 import { terrainGLSL } from '../simulation/terrain';
 export const PALETTE = {
   background: '#ece9dd',
-  sand: '#d7c9aa',
-  armor: '#c9c4b0',
-  edge: '#e0dcca',
-  dark: '#333731',
+  sand: '#dbd3bc',
+  armor: '#bcb9a8',
+  edge: '#c9c6b6',
+  dark: '#252922',
   steel: '#74766c',
-  bronze: '#99815a',
+  bronze: '#928065',
   xray: '#7aafad',
 } as const;
 export function machineMaterial(
   color: string,
   metalness: number,
   roughness: number,
+  wear: Texture,
 ): MeshStandardMaterial {
   const material = new MeshStandardMaterial({
     color,
@@ -32,30 +34,43 @@ export function machineMaterial(
     stencilZPass: ReplaceStencilOp,
   });
   material.onBeforeCompile = (shader) => {
-    shader.vertexShader = 'varying vec3 machineWorld;\n' + shader.vertexShader;
+    shader.uniforms.surfaceWear = { value: wear };
+    shader.vertexShader =
+      'varying vec3 machineWorld; varying vec2 plateUV; varying float plateSeed;\n' +
+      shader.vertexShader;
     shader.vertexShader = shader.vertexShader.replace(
       '#include <project_vertex>',
-      `vec4 machinePosition = vec4(transformed, 1.0);
+      `plateUV=uv;
+      plateSeed=0.0;
+      vec4 machinePosition = vec4(transformed, 1.0);
       #ifdef USE_INSTANCING
       machinePosition = instanceMatrix * machinePosition;
+      plateSeed=fract(float(gl_InstanceID)*0.6180339887);
       #endif
       machineWorld = (modelMatrix * machinePosition).xyz;
       #include <project_vertex>`,
     );
     shader.fragmentShader =
-      'varying vec3 machineWorld;\n' +
+      'varying vec3 machineWorld; varying vec2 plateUV; varying float plateSeed; uniform sampler2D surfaceWear;\n' +
       terrainGLSL +
       '\n' +
       shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <color_fragment>',
       `#include <color_fragment>
-      float dirt = 0.08*sin(machineWorld.x*17.0)*sin(machineWorld.z*29.0);
-      float contactDirt = 0.16*(1.0-smoothstep(0.0, 2.5, machineWorld.y-surfaceHeight(machineWorld.xz)));
-      diffuseColor.rgb *= 1.0-dirt-contactDirt;`,
+      vec2 wearUV=plateUV*0.7+vec2(plateSeed,plateSeed*0.37);
+      vec4 wearSample=texture2D(surfaceWear,wearUV);
+      float plateTone=0.98+plateSeed*0.04;
+      float contactDirt=0.12*(1.0-smoothstep(-0.5,2.5,machineWorld.y-surfaceHeight(machineWorld.xz)));
+      diffuseColor.rgb *= plateTone*(0.88+wearSample.r*0.14)-contactDirt;`,
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <roughnessmap_fragment>',
+      `#include <roughnessmap_fragment>
+      roughnessFactor *= 0.88 + wearSample.g * 0.15;`,
     );
   };
-  material.customProgramCacheKey = () => 'machine-dirt-v1';
+  material.customProgramCacheKey = () => 'machine-uv-wear-v2';
   return material;
 }
 export function xrayMaterial(wireframe = false): MeshBasicMaterial {

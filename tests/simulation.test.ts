@@ -1,4 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { Vector3 } from 'three';
+import {
+  Trajectory,
+  TRAVEL_SPEED,
+  mapPosition,
+} from '../src/simulation/Trajectory';
 import { Simulation } from '../src/simulation/Simulation';
 import { CAMERAS, RING_COUNT, RING_SPACING } from '../src/simulation/config';
 import { terrainGLSL, terrainHeight, TERRAIN } from '../src/simulation/terrain';
@@ -48,7 +54,7 @@ describe('articulated trajectory', () => {
     }
     expect(partial && full && high).toBe(true);
   });
-  it('pauses exactly and clamps long frames on resume', () => {
+  it('pauses exactly and discards suspended time on resume', () => {
     const sim = new Simulation();
     sim.tick(0.02);
     sim.command({ type: 'pause' });
@@ -57,7 +63,9 @@ describe('articulated trajectory', () => {
     expect(sim.time).toBe(before);
     sim.command({ type: 'pause' });
     sim.tick(100);
-    expect(sim.time - before).toBeCloseTo(0.05);
+    expect(sim.time).toBe(before);
+    sim.tick(0.2);
+    expect(sim.time - before).toBeCloseTo(0.2);
   });
   it('camera and X-ray commands preserve time and geometry', () => {
     const sim = new Simulation();
@@ -99,8 +107,8 @@ describe('articulated trajectory', () => {
     expect(terrainGLSL).toContain('1.35*sin(p.x*0.065+p.y*0.035)');
     const step = TERRAIN.size / TERRAIN.resolution;
     let error = 0;
-    for (let x = -50; x < 50; x += 1.7) {
-      for (let z = -30; z < 30; z += 2.3) {
+    for (let x = -100; x < 130; x += 1.7) {
+      for (let z = -105; z < 40; z += 2.3) {
         const x0 = Math.floor((x + 170) / step) * step - 170;
         const z0 = Math.floor((z + 170) / step) * step - 170;
         const u = (x - x0) / step,
@@ -140,6 +148,72 @@ describe('reference transition', () => {
       sim.segments.forEach((s, i) =>
         expect(s.position.distanceTo(before[i])).toBeLessThan(0.15),
       );
+    }
+  });
+});
+
+describe('world-space travel', () => {
+  it('advances across fixed terrain instead of flexing around a stationary head', () => {
+    const sim = new Simulation();
+    const start = sim.segments[0].position.clone();
+    sim.seek(10);
+    expect(sim.travelDistance).toBe(50);
+    const head = sim.segments[0].position;
+    expect(Math.hypot(head.x - start.x, head.z - start.z)).toBeGreaterThan(38);
+  });
+  it('makes every ring follow positions previously occupied by the head', () => {
+    const sim = new Simulation(),
+      history = new Simulation();
+    sim.seek(15);
+    for (const ring of sim.segments) {
+      history.seek(ring.routeDistance / TRAVEL_SPEED);
+      expect(
+        ring.position.distanceTo(history.segments[0].position),
+      ).toBeLessThan(1e-8);
+    }
+  });
+  it('keeps travel speed independent of normal foreground frame rate', () => {
+    const positions: Vector3[] = [];
+    for (const fps of [60, 30, 10, 5, 2, 1]) {
+      const sim = new Simulation();
+      for (let i = 0; i < fps * 5; i++) sim.tick(1 / fps);
+      expect(sim.time).toBeCloseTo(5, 8);
+      positions.push(sim.segments[0].position.clone());
+    }
+    for (const position of positions)
+      expect(position.distanceTo(positions[0])).toBeLessThan(1e-8);
+  });
+  it('crosses route seams continuously and keeps the route inside the map and terrain', () => {
+    const route = new Trajectory();
+    const before = new Vector3(),
+      after = new Vector3();
+    route.sample(route.length - 0.001, before);
+    route.sample(0.001, after);
+    expect(before.distanceTo(after)).toBeCloseTo(0.002, 4);
+    for (let distance = 0; distance < route.length; distance += 1) {
+      route.sample(distance, before);
+      const [x, y] = mapPosition(before.x, before.z);
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThan(250);
+      expect(y).toBeGreaterThan(0);
+      expect(y).toBeLessThan(155);
+      expect(Math.abs(before.x)).toBeLessThan(TERRAIN.size / 2 - 10);
+      expect(Math.abs(before.z)).toBeLessThan(TERRAIN.size / 2 - 10);
+    }
+  });
+  it('retains ordered gaps and finite orientations for an entire world route', () => {
+    const sim = new Simulation();
+    for (let time = 0; time < sim.trajectory.duration + 2; time += 0.4) {
+      sim.seek(time);
+      sim.segments.forEach((ring, i) => {
+        expect(ring.rotation.length()).toBeCloseTo(1, 8);
+        if (i) {
+          const prior = sim.segments[i - 1];
+          expect(ring.routeDistance).toBeLessThan(prior.routeDistance);
+          expect(ring.position.distanceTo(prior.position)).toBeGreaterThan(1.3);
+          expect(ring.position.distanceTo(prior.position)).toBeLessThan(1.46);
+        }
+      });
     }
   });
 });

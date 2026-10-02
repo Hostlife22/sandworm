@@ -144,7 +144,16 @@ test('reference screenshots and renderer measurements', async ({ page }) => {
     page.getByRole('heading', { name: '3D rendering is unavailable' }),
   ).toHaveCount(0);
   await page.screenshot({ path: 'docs/screenshots/06-partial-xray.png' });
-  await freeze(page, 14);
+  const buriedTime = await page.evaluate(() => {
+    const s = window.__SANDWORM__!;
+    for (let t = 0; t < s.trajectory.duration; t += 0.1) {
+      s.seek(t);
+      if (s.submergedCount === 36) return t;
+    }
+    throw new Error('Route never fully submerges');
+  });
+  await freeze(page, buriedTime);
+  await settle(page);
   await expect(page.locator('canvas')).toBeVisible();
   await expect(
     page.getByRole('heading', { name: '3D rendering is unavailable' }),
@@ -263,4 +272,34 @@ test('measure moving WebGL frames after warm-up', async ({
     contentType: 'application/json',
   });
   expect(Number.isFinite(metrics.medianMs)).toBe(true);
+});
+
+test('machine travels past a fixed outpost camera', async ({ page }) => {
+  test.setTimeout(90000);
+  await ready(page);
+  await freeze(page);
+  await page.getByRole('button', { name: 'outpost', exact: true }).click();
+  await settle(page);
+  await page.waitForFunction(() => {
+    const p = window.__SANDWORM__!.cameraPosition;
+    return Math.hypot(p.x + 32, p.y - 4.8, p.z - 25) < 0.001;
+  });
+  const before = await page.evaluate(() => ({
+    head: window.__SANDWORM__!.segments[0].position.toArray(),
+    camera: window.__SANDWORM__!.cameraPosition.toArray(),
+  }));
+  await page.screenshot({ path: 'docs/screenshots/10-travel-start.png' });
+  await freeze(page, 6);
+  await settle(page);
+  const after = await page.evaluate(() => ({
+    head: window.__SANDWORM__!.segments[0].position.toArray(),
+    camera: window.__SANDWORM__!.cameraPosition.toArray(),
+  }));
+  expect(
+    Math.hypot(after.head[0] - before.head[0], after.head[2] - before.head[2]),
+  ).toBeGreaterThan(20);
+  expect(
+    Math.hypot(...after.camera.map((v, i) => v - before.camera[i])),
+  ).toBeLessThan(0.01);
+  await page.screenshot({ path: 'docs/screenshots/11-travel-later.png' });
 });

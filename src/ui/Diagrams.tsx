@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { Simulation } from '../simulation/Simulation';
-import { CYCLE_DURATION } from '../simulation/config';
+import { Vector3 } from 'three';
+import { mapPosition, OUTPOSTS } from '../simulation/Trajectory';
 export function Panel({
   title,
   number,
@@ -31,7 +32,7 @@ export function HeadDiagram({ simulation }: { simulation: Simulation }) {
     const update = () => {
       spin.current?.setAttribute(
         'transform',
-        `rotate(${(simulation.poseTime * 0.24 * 180) / Math.PI} 110 108)`,
+        `rotate(${(simulation.mechanismAngle * 180) / Math.PI} 110 108)`,
       );
       frame = requestAnimationFrame(update);
     };
@@ -126,11 +127,28 @@ export function RegionMap() {
 }
 export function TerrainMap({ simulation }: { simulation: Simulation }) {
   const marker = useRef<SVGCircleElement>(null);
+  const route = useMemo(() => {
+    const point = new Vector3();
+    return Array.from({ length: 97 }, (_, i) => {
+      simulation.trajectory.sample(
+        (i / 96) * simulation.trajectory.length,
+        point,
+      );
+      const [x, y] = mapPosition(point.x, point.z);
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`;
+    }).join(' ');
+  }, [simulation]);
   useEffect(() => {
     const timer = setInterval(() => {
       const s = simulation.segments[0];
-      marker.current?.setAttribute('cx', String(130 + s.position.x * 1.5));
-      marker.current?.setAttribute('cy', String(77 + s.position.z * 5));
+      marker.current?.setAttribute(
+        'cx',
+        String(mapPosition(s.position.x, s.position.z)[0]),
+      );
+      marker.current?.setAttribute(
+        'cy',
+        String(mapPosition(s.position.x, s.position.z)[1]),
+      );
     }, 100);
     return () => clearInterval(timer);
   }, [simulation]);
@@ -163,15 +181,19 @@ export function TerrainMap({ simulation }: { simulation: Simulation }) {
           />
         ))}
       </g>
-      <path d="M34 53Q69 134 125 108T187 51" className="route" />
-      <path d="m52 82 4-7 4 7Zm143-26 4-7 4 7Z" className="station" />
+      <path d={route} className="route" />
+      {OUTPOSTS.map(([x, z], i) => {
+        const [mx, my] = mapPosition(x, z);
+        return (
+          <g key={i} transform={`translate(${mx} ${my})`}>
+            <path d="m-3 3 3-6 3 6Z" className="station" />
+            <text x="6" y="2">
+              AEI–0{i + 1}
+            </text>
+          </g>
+        );
+      })}
       <circle ref={marker} cx="163" cy="72" r="4" className="position-marker" />
-      <text x="63" y="78">
-        AEI–02
-      </text>
-      <text x="183" y="45">
-        AEI–03
-      </text>
       <text x="11" y="145">
         24°17′ N / 08°42′ E
       </text>
@@ -317,9 +339,7 @@ export function CycleDiagram({ simulation }: { simulation: Simulation }) {
     const timer = setInterval(() => {
       if (ref.current)
         ref.current.dataset.phase = String(
-          Math.floor(
-            ((simulation.poseTime % CYCLE_DURATION) / CYCLE_DURATION) * 4,
-          ),
+          Math.floor(simulation.cycleProgress * 4),
         );
     }, 100);
     return () => clearInterval(timer);

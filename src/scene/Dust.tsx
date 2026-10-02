@@ -1,6 +1,11 @@
 import { useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { BufferAttribute, BufferGeometry, ShaderMaterial } from 'three';
+import {
+  BufferAttribute,
+  BufferGeometry,
+  ShaderMaterial,
+  Vector3,
+} from 'three';
 import type { Simulation } from '../simulation/Simulation';
 import { random, terrainHeight } from '../simulation/terrain';
 const COUNT = 220;
@@ -29,6 +34,8 @@ export function Dust({ simulation }: { simulation: Simulation }) {
       birth: new Float64Array(COUNT).fill(-10),
       origin: new Float32Array(COUNT * 3),
       previous: simulation.poseTime,
+      lateral: new Vector3(),
+      forward: new Vector3(),
     };
   }, [simulation]);
   useEffect(
@@ -43,7 +50,7 @@ export function Dust({ simulation }: { simulation: Simulation }) {
     const dt = t - resources.previous;
     resources.previous = t;
     if (dt === 0) return;
-    if (dt < 0 || dt > 0.1) resources.birth.fill(-10);
+    if (dt < 0 || dt > 1) resources.birth.fill(-10);
     for (let i = 0; i < COUNT; i++) {
       let age = t - resources.birth[i];
       const lifetime = 1.3 + random(i) * 1.3;
@@ -57,13 +64,20 @@ export function Dust({ simulation }: { simulation: Simulation }) {
         resources.birth[i] = t;
         age = 0;
         const side = i % 2 === 0 ? 1 : -1;
-        resources.origin[i * 3] = s.position.x + (random(i + 1) - 0.5) * 1.8;
+        resources.lateral.set(1, 0, 0).applyQuaternion(s.rotation);
+        resources.forward.set(0, 0, 1).applyQuaternion(s.rotation);
+        const spread =
+          side *
+          Math.sqrt(Math.max(0, s.radius * s.radius - (s.position.y - h) ** 2));
+        const scatter = (random(i + 1) - 0.5) * 1.8;
+        resources.origin[i * 3] =
+          s.position.x +
+          resources.lateral.x * spread +
+          resources.forward.x * scatter;
         resources.origin[i * 3 + 2] =
           s.position.z +
-          side *
-            Math.sqrt(
-              Math.max(0, s.radius * s.radius - (s.position.y - h) ** 2),
-            );
+          resources.lateral.z * spread +
+          resources.forward.z * scatter;
         resources.origin[i * 3 + 1] = h + 0.15;
       }
       const alive = age >= 0 && age < lifetime;

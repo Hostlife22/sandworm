@@ -1,6 +1,7 @@
 import { Component, Suspense, useEffect, useState, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import type { DirectionalLight } from 'three';
 import type { Simulation } from '../simulation/Simulation';
 import { Machine } from './Machine';
 import { Terrain } from './Terrain';
@@ -42,6 +43,14 @@ function Clock({
   onReady: () => void;
 }) {
   const previousTime = useRef(Number.NaN);
+  const skipResume = useRef(false);
+  useEffect(() => {
+    const visibility = () => {
+      skipResume.current = true;
+    };
+    document.addEventListener('visibilitychange', visibility);
+    return () => document.removeEventListener('visibilitychange', visibility);
+  }, []);
   useEffect(() => {
     simulation.ready = true;
     onReady();
@@ -50,7 +59,8 @@ function Clock({
     };
   }, [simulation, onReady]);
   useFrame(({ gl }, delta) => {
-    simulation.tick(document.hidden ? 0 : delta);
+    simulation.tick(document.hidden || skipResume.current ? 0 : delta);
+    skipResume.current = false;
     gl.shadowMap.autoUpdate = false;
     gl.shadowMap.needsUpdate = previousTime.current !== simulation.poseTime;
     previousTime.current = simulation.poseTime;
@@ -58,6 +68,35 @@ function Clock({
     simulation.triangles = gl.info.render.triangles;
   }, -3);
   return null;
+}
+function Sun({ simulation }: { simulation: Simulation }) {
+  const light = useRef<DirectionalLight>(null);
+  useFrame(() => {
+    if (!light.current) return;
+    light.current.position.copy(simulation.focus);
+    light.current.position.x -= 24;
+    light.current.position.y += 34;
+    light.current.position.z -= 18;
+    light.current.target.position.copy(simulation.focus);
+    light.current.target.updateMatrixWorld();
+  });
+  return (
+    <directionalLight
+      ref={light}
+      position={[-24, 34, -18]}
+      intensity={2.6}
+      color="#fff3d7"
+      castShadow
+      shadow-mapSize={[1024, 1024]}
+      shadow-camera-left={-65}
+      shadow-camera-right={65}
+      shadow-camera-top={50}
+      shadow-camera-bottom={-50}
+      shadow-camera-far={140}
+      shadow-bias={-0.0003}
+      shadow-normalBias={0.06}
+    />
+  );
 }
 const readyEvent = () => document.dispatchEvent(new Event('scene-ready'));
 export default function Scene({ simulation }: { simulation: Simulation }) {
@@ -118,22 +157,9 @@ export default function Scene({ simulation }: { simulation: Simulation }) {
           >
             <color attach="background" args={[PALETTE.background]} />
             <fog attach="fog" args={[PALETTE.background, 85, 235]} />
-            <hemisphereLight args={['#f7f3e8', '#9b8d6f', 2.0]} />
+            <hemisphereLight args={['#f7f3e8', '#9b8d6f', 1.65]} />
             <ambientLight intensity={0.3} />
-            <directionalLight
-              position={[-24, 34, -18]}
-              intensity={3.2}
-              color="#fff3d7"
-              castShadow
-              shadow-mapSize={[1024, 1024]}
-              shadow-camera-left={-65}
-              shadow-camera-right={65}
-              shadow-camera-top={50}
-              shadow-camera-bottom={-50}
-              shadow-camera-far={140}
-              shadow-bias={-0.0003}
-              shadow-normalBias={0.06}
-            />
+            <Sun simulation={simulation} />
             <Suspense fallback={null}>
               <Clock simulation={simulation} onReady={readyEvent} />
               <Terrain />

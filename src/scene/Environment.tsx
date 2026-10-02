@@ -5,18 +5,11 @@ import type { Group } from 'three';
 import { random, terrainHeight } from '../simulation/terrain';
 import type { Simulation } from '../simulation/Simulation';
 import { PALETTE } from './materials';
+import { OUTPOSTS } from '../simulation/Trajectory';
 export function Environment({ simulation }: { simulation: Simulation }) {
   const rocks = useRef<InstancedMesh>(null);
   const drones = useRef<Group>(null);
-  const stations = useMemo(
-    () => [
-      [-30, 15],
-      [32, -19],
-      [-14, -55],
-      [55, 35],
-    ],
-    [],
-  );
+  const stations = useMemo(() => OUTPOSTS, []);
   useEffect(() => {
     if (!rocks.current) return;
     const o = new Object3D();
@@ -33,9 +26,16 @@ export function Environment({ simulation }: { simulation: Simulation }) {
     rocks.current.instanceMatrix.needsUpdate = true;
   }, []);
   useFrame(() => {
-    if (drones.current)
+    if (drones.current) {
+      drones.current.position
+        .copy(simulation.focus)
+        .sub(simulation.initialFocus);
       drones.current.position.y =
-        13 + Math.sin(simulation.poseTime * 0.7) * 0.5;
+        terrainHeight(simulation.focus.x, simulation.focus.z) +
+        13 +
+        Math.sin(simulation.poseTime * 0.7) * 0.5;
+      drones.current.rotation.y = simulation.heading;
+    }
   });
   return (
     <group>

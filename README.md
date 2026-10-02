@@ -40,7 +40,8 @@ playback are needed. The reference recording is used only for visual study.
 
 Pause freezes the body, drill, particles and technical indicators. The camera stays
 interactive. Dragging interrupts automatic camera movement; selecting a camera
-restores it. New camera commands interpolate from the current view. X-ray changes
+restores it. Tracking views follow the body; Outpost remains fixed so the machine
+passes through its view. New camera commands interpolate from the current view. X-ray changes
 neither time nor camera.
 
 The tour repeats the recording's 78.583-second camera and scan sequence. It follows
@@ -49,13 +50,14 @@ source frames. [Reference study and state map](docs/REFERENCE_STUDY.md).
 
 ## Mechanics
 
-- Arc-length lookup with 600 samples places all rings on one three-dimensional path.
+- A cached 4096-sample arc-length lookup moves the head along a fixed world route
+  at 5 scene units per second. Each ring follows the positions the head passed.
   A traveling compression wave changes their spacing within bounded limits.
 - Stable tangent frames orient segments. Inter-ring rods join transformed attachment
   points; deep dark frames, bevelled plates, hatches, vents, bolts, pipes and tail fins
   use shared geometry and instanced batches.
 - The head contains concentric metal rims and 40 rotating radial ribs with a deep,
-  open center. Surface material variation and sand staining are deterministic.
+  open center. UV-attached scratches, panel roughness and sand staining are deterministic.
 - The path produces breaching, a surface arc, ploughing, sequential diving and fully
   underground traversal. The body is never scaled away to simulate burial.
 - Displaced dune geometry, CPU contact tests and X-ray fragments share one terrain
@@ -77,12 +79,14 @@ src/
   simulation/
     config.ts              Typed specifications, cameras and reference tour
     Simulation.ts          Commands, UI store, clock, arc-length solver, poses
+    Trajectory.ts          Closed world route and cached arc-length lookup
     terrain.ts             Shared terrain equation and deterministic random seed
   scene/
     Scene.tsx              Canvas, lighting, fog, loading and WebGL fallback
     Machine.tsx            Instanced armor, frame, drill and articulated rods
     geometry.ts            Reusable bevelled annular geometry
     materials.ts           Physical materials and subsurface scan shader
+    surfaceTexture.ts      Deterministic panel wear and roughness texture
     Terrain.tsx            Displaced mesh and procedural ripple shading
     Environment.tsx        Stations, drones, rocks and distant structures
     Dust.tsx               Bounded contact particle pool
@@ -94,8 +98,8 @@ src/
 
 Per-frame state is mutable and outside React. `useSyncExternalStore` subscribes only
 to UI commands. The renderer caps DPR at 1.5 and shadows at 1024²; tiny fasteners are
-culled for distant views. Long frames are clamped to 50 ms, and background time is
-not accumulated. Dev builds expose `window.__SANDWORM__` for deterministic captures;
+culled for distant views. Foreground frames up to five seconds retain elapsed time;
+long suspension gaps and time spent in hidden tabs are discarded. Dev builds expose `window.__SANDWORM__` for deterministic captures;
 production builds do not expose it.
 
 ## Checks
@@ -111,13 +115,15 @@ npm run test:e2e
 npm run check           # Format check + lint + types + unit tests + build
 ```
 
-Playwright uses a dedicated port, 5186, and captures nine reference views under
+Playwright uses a dedicated port, 5186, and captures eleven reference views under
 `docs/screenshots/`. Tests include keyboard input, pause/resume, reduced motion,
-WebGL fallback and mobile overflow. Pure tests cover segment spacing, quaternions,
-continuity, repeatable poses, terrain mask accuracy and tour commands.
+WebGL fallback, mobile overflow and travel past a stationary camera. Pure tests cover segment spacing, quaternions,
+continuity, repeatable poses, frame-rate-independent travel, head/tail path agreement,
+terrain mask accuracy and tour commands.
 
 [Validation and visual comparison](docs/VALIDATION.md) records actual results and
-limitations. GitHub CI runs `npm ci`, all quality checks and Chromium tests. The
+limitations. [Motion and materials review](docs/MOTION_REVIEW.md) explains the
+forward-travel correction and includes a fixed-camera comparison. GitHub CI runs `npm ci`, all quality checks and Chromium tests. The
 manual **Publish GitHub Pages** workflow builds and deploys `/sandworm/`; select
 GitHub Actions as the repository's Pages source before running it. No publication
 is implied by a successful local build.
@@ -143,8 +149,8 @@ mobile labels are enlarged. This is not a full WCAG audit.
 
 This is a procedural interpretation, not an exact recovered model from the video.
 The trajectory is an analytic periodic demonstration, not soil mechanics or a
-navigation system. The simulated body stays near the observation area and does not
-excavate a persistent tunnel. Transparent scanning is a technical overlay, not
+navigation system. The machine travels a closed route through the finite desert
+and does not excavate a persistent tunnel. Transparent scanning is a technical overlay, not
 volumetric tomography; overlapping internal parts accumulate opacity. Dust is a
 bounded visual effect, not granular physics. See the validation report for measured
 performance and remaining visual differences.

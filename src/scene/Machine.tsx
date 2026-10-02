@@ -11,6 +11,7 @@ import type { BufferGeometry, Material } from 'three';
 import { RING_COUNT } from '../simulation/config';
 import type { Simulation } from '../simulation/Simulation';
 import { createGeometries } from './geometry';
+import { createWearTexture } from './surfaceTexture';
 import { machineMaterial, PALETTE, xrayMaterial } from './materials';
 
 interface Part {
@@ -44,12 +45,13 @@ function local(
 }
 function buildBatches(): { batches: Batch[]; dispose: () => void } {
   const g = createGeometries();
+  const wear = createWearTexture();
   const m = {
-    armor: machineMaterial(PALETTE.armor, 0.28, 0.72),
-    edge: machineMaterial(PALETTE.edge, 0.4, 0.55),
-    dark: machineMaterial(PALETTE.dark, 0.65, 0.58),
-    steel: machineMaterial(PALETTE.steel, 0.78, 0.32),
-    bronze: machineMaterial(PALETTE.bronze, 0.65, 0.45),
+    armor: machineMaterial(PALETTE.armor, 0.12, 0.88, wear),
+    edge: machineMaterial(PALETTE.edge, 0.2, 0.72, wear),
+    dark: machineMaterial(PALETTE.dark, 0.55, 0.68, wear),
+    steel: machineMaterial(PALETTE.steel, 0.78, 0.4, wear),
+    bronze: machineMaterial(PALETTE.bronze, 0.62, 0.58, wear),
   };
   const armor: Batch = { geometry: g.tile, material: m.armor, parts: [] };
   const rims: Batch = { geometry: g.rim, material: m.edge, parts: [] };
@@ -77,19 +79,20 @@ function buildBatches(): { batches: Batch[]; dispose: () => void } {
       const c = Math.cos(a);
       const s = Math.sin(a);
       armor.parts.push({ ring: i, local: local(0, 0, 0, r, r, 1, a) });
-      const variant = (i + j) % 3;
-      vents.parts.push({
-        ring: i,
-        local: local(
-          c * (r + 0.025),
-          s * (r + 0.025),
-          0,
-          0.04,
-          r * 0.28,
-          0.47,
-          a,
-        ),
-      });
+      const variant = (i * 7 + j * 3) % 5;
+      if (variant !== 3)
+        vents.parts.push({
+          ring: i,
+          local: local(
+            c * (r + 0.025),
+            s * (r + 0.025),
+            0,
+            0.04,
+            r * (variant === 0 || variant === 4 ? 0.28 : 0.235),
+            0.47,
+            a,
+          ),
+        });
       if (variant === 0) {
         for (let k = 0; k < 5; k++)
           hatches.parts.push({
@@ -104,16 +107,16 @@ function buildBatches(): { batches: Batch[]; dispose: () => void } {
               a,
             ),
           });
-      } else {
+      } else if (variant !== 4) {
         hatches.parts.push({
           ring: i,
           local: local(
             c * (r + 0.075),
             s * (r + 0.075),
             0,
-            0.085,
+            0.045,
             r * 0.24,
-            variant === 1 ? 0.38 : 0.2,
+            variant === 1 ? 0.42 : variant === 3 ? 0.48 : 0.25,
             a,
           ),
         });
@@ -160,9 +163,9 @@ function buildBatches(): { batches: Batch[]; dispose: () => void } {
     }
   }
   for (const [r, z] of [
-    [3.45, 0.58],
-    [3.28, 0.84],
-    [2.86, 0.92],
+    [3.45, 0.82],
+    [3.28, 1.03],
+    [2.86, 1.18],
     [2.36, 0.35],
     [1.92, -0.5],
     [1.48, -1.45],
@@ -175,11 +178,11 @@ function buildBatches(): { batches: Batch[]; dispose: () => void } {
     const s = Math.sin(a);
     jaw.parts.push({
       ring: 0,
-      local: local(c * 3.12, s * 3.12, 0.76, 0.62, 0.19, 0.44, a),
+      local: local(c * 3.12, s * 3.12, 1.16, 0.7, 0.32, 0.48, a),
     });
     bronze.parts.push({
       ring: 0,
-      local: local(c * 2.81, s * 2.81, 0.83, 0.25, 0.095, 0.15, a),
+      local: local(c * 2.81, s * 2.81, 1.28, 0.25, 0.095, 0.15, a),
     });
     // Tapered, angled ribs recede into a genuinely open, deep throat.
     const mat = new Matrix4()
@@ -191,7 +194,7 @@ function buildBatches(): { batches: Batch[]; dispose: () => void } {
     for (const r of [2.96, 3.36])
       bolts.parts.push({
         ring: 0,
-        local: local(c * r, s * r, 1.0, 0.055, 0.055, 0.055),
+        local: local(c * r, s * r, 1.44, 0.045, 0.045, 0.055),
       });
   }
   for (let j = 0; j < 4; j++) {
@@ -223,6 +226,7 @@ function buildBatches(): { batches: Batch[]; dispose: () => void } {
       lips,
     ],
     dispose: () => {
+      wear.dispose();
       Object.values(g).forEach((v) => v.dispose());
       Object.values(m).forEach((v) => v.dispose());
     },
@@ -270,7 +274,7 @@ function Instances({
       const segment = simulation.segments[p.ring];
       scratch.world.compose(segment.position, segment.rotation, scratch.scale);
       if (p.animated) {
-        scratch.spin.makeRotationZ(simulation.poseTime * 0.24);
+        scratch.spin.makeRotationZ(simulation.mechanismAngle);
         scratch.world.multiply(scratch.spin);
       }
       if (p.linkAngle !== undefined && p.linkRadius !== undefined) {

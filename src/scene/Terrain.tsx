@@ -41,16 +41,21 @@ export function Terrain() {
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <color_fragment>',
         `#include <color_fragment>
-        float ripple=sin(duneWorld.x*2.6+duneWorld.z*3.8+2.0*sin(duneWorld.x*0.16)+sin(duneWorld.z*0.22));
-        float grains=fract(sin(dot(duneWorld.xz,vec2(127.1,311.7)))*43758.5453);
-        float attenuation=1.0-smoothstep(40.0,145.0,length(duneWorld.xz));
-        diffuseColor.rgb*=1.0-(0.036*ripple+0.018*grains)*attenuation;`,
+        float phase=duneWorld.x*1.8+duneWorld.z*2.2+8.0*sin(duneWorld.x*0.16+duneWorld.z*0.13)+5.0*cos(duneWorld.z*0.22-duneWorld.x*0.11)+1.5*sin(duneWorld.x*0.41+duneWorld.z*0.36);
+        float rippleFade=1.0-smoothstep(1.0,4.0,fwidth(phase));
+        float windPatch=0.12+0.88*smoothstep(-0.3,0.8,sin(duneWorld.x*0.11-duneWorld.z*0.07)+0.45*sin(duneWorld.x*0.24+duneWorld.z*0.15));
+        float ridge=pow(0.5+0.5*sin(phase),16.0)*rippleFade*windPatch;
+        float broad=sin(duneWorld.x*0.17)*sin(duneWorld.z*0.11);
+        diffuseColor.rgb*=1.0-0.24*ridge+0.018*broad;
+        float sandHeight=0.012*ridge;`,
       );
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <normal_fragment_maps>',
         `#include <normal_fragment_maps>
-        float rippleNormal=cos(duneWorld.x*2.6+duneWorld.z*3.8+2.0*sin(duneWorld.x*0.16)+sin(duneWorld.z*0.22));
-        normal=normalize(normal+vec3(rippleNormal*0.09,0.0,rippleNormal*0.035));`,
+        vec3 q0=dFdx(-vViewPosition),q1=dFdy(-vViewPosition);
+        vec3 r1=cross(q1,normal),r2=cross(normal,q0);
+        float det=dot(q0,r1);
+        normal=normalize(abs(det)*normal-sign(det)*(dFdx(sandHeight)*r1+dFdy(sandHeight)*r2));`,
       );
     };
     return { geometry, material };

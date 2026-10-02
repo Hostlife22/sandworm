@@ -1,13 +1,15 @@
 import { Matrix4, Quaternion, Vector3 } from 'three';
-import { CYCLE_DURATION, DEMO_CUES, RING_COUNT, RING_SPACING } from './config';
+import { DEMO_CUES, RING_COUNT, RING_SPACING } from './config';
 import type { CameraMode, MotionPhase } from './config';
 import { terrainHeight } from './terrain';
+import { Trajectory, TRAVEL_SPEED } from './Trajectory';
 
 export interface SegmentTransform {
   position: Vector3;
   rotation: Quaternion;
   radius: number;
   distance: number;
+  routeDistance: number;
   submerged: boolean;
 }
 export interface UIState {
@@ -23,10 +25,15 @@ export type Command =
   | { type: 'camera'; camera: CameraMode }
   | { type: 'pause' | 'reference' | 'xray' | 'hud' | 'demo' | 'manual-camera' };
 const UP = new Vector3(0, 1, 0);
-const SAMPLE_COUNT = 600;
-const SAMPLE_STEP = 0.13;
 
 export class Simulation {
+  readonly trajectory = new Trajectory();
+  readonly focus = new Vector3();
+  readonly initialFocus = new Vector3();
+  heading = 0;
+  travelDistance = 0;
+  cycleProgress = 0;
+  mechanismAngle = 0;
   time = 0;
   poseTime = 0;
   demoTime = 0;
@@ -48,13 +55,13 @@ export class Simulation {
       rotation: new Quaternion(),
       radius: 3.5 * (0.28 + 0.72 * Math.pow(1 - i / RING_COUNT, 0.36)),
       distance: 0,
+      routeDistance: 0,
       submerged: false,
     }),
   );
   private state: UIState;
   private listeners = new Set<() => void>();
-  private samples = Array.from({ length: SAMPLE_COUNT }, () => new Vector3());
-  private lengths = new Float64Array(SAMPLE_COUNT);
+
   private tangent = new Vector3();
   private right = new Vector3();
   private up = new Vector3();
@@ -74,6 +81,7 @@ export class Simulation {
       cameraRevision: 0,
     };
     this.solve(0);
+    this.initialFocus.copy(this.focus);
   }
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -111,7 +119,8 @@ export class Simulation {
         break;
       case 'reference':
         this.referenceTarget =
-          Math.round(this.poseTime / CYCLE_DURATION) * CYCLE_DURATION;
+          Math.round(this.poseTime / this.trajectory.duration) *
+          this.trajectory.duration;
         this.set({ reference: true, paused: true, demo: false });
         break;
       case 'demo':
@@ -123,16 +132,21 @@ export class Simulation {
   }
   // A deterministic inspection entry point, also used by the capture suite.
   seek(time: number): void {
+    this.cameraSettled = false;
     this.time = time;
     this.poseTime = time;
     this.solve(time);
   }
   tick(delta: number): void {
-    const dt = Math.min(Math.max(delta, 0), 0.05);
+    // Analytic motion needs no integration steps: retain real time at 5–60 FPS.
+    // Discard long suspension gaps rather than replaying time spent in a hidden tab.
+    const dt = Number.isFinite(delta) && delta >= 0 && delta <= 5 ? delta : 0;
     this.frameMs += (delta * 1000 - this.frameMs) * 0.03;
     if (this.state.reference) {
+      const remaining = this.referenceTarget - this.poseTime;
       this.poseTime +=
-        (this.referenceTarget - this.poseTime) * (1 - Math.exp(-dt * 4));
+        Math.sign(remaining) *
+        Math.min(Math.abs(remaining) * (1 - Math.exp(-dt * 4)), dt * 8);
       if (Math.abs(this.poseTime - this.referenceTarget) < 0.0001) {
         this.poseTime = 0;
         this.referenceTarget = 0;
@@ -158,44 +172,31 @@ export class Simulation {
     }
     if (this.solvedTime !== this.poseTime) this.solve(this.poseTime);
   }
-  private path(q: number, time: number, target: Vector3): void {
-    const phase = time * 0.24 + 0.92;
-    target.set(
-      22 - q,
-      -3.1 + 12 * Math.cos(phase - q * 0.049),
-      4 * Math.sin(q * 0.055 + phase) - 3,
-    );
-  }
   solve(time: number): void {
     this.solvedTime = time;
-    // Oversample once, then invert the cumulative arc-length table for all rings.
-    this.lengths[0] = 0;
-    for (let j = 0; j < SAMPLE_COUNT; j++) {
-      this.path(j * SAMPLE_STEP, time, this.samples[j]);
-      if (j)
-        this.lengths[j] =
-          this.lengths[j - 1] + this.samples[j].distanceTo(this.samples[j - 1]);
-    }
+    this.travelDistance = time * TRAVEL_SPEED;
+    const lap = this.travelDistance / this.trajectory.length;
+    const drivePhase = lap * Math.PI * 2 * 24;
+    this.cycleProgress = (((lap * 24) % 1) + 1) % 1;
+    this.mechanismAngle = lap * Math.PI * 2 * 3;
     let distance = 0;
-    let cursor = 1;
     this.submergedCount = 0;
+    let rising = false;
     for (let i = 0; i < RING_COUNT; i++) {
       const segment = this.segments[i];
       if (i)
         distance +=
-          RING_SPACING * (1 + 0.045 * Math.sin(i * 0.55 - time * 1.92));
-      while (cursor < SAMPLE_COUNT - 1 && this.lengths[cursor] < distance)
-        cursor++;
-      const a = this.lengths[cursor - 1];
-      const b = this.lengths[cursor];
-      segment.position.lerpVectors(
-        this.samples[cursor - 1],
-        this.samples[cursor],
-        (distance - a) / (b - a),
+          RING_SPACING * (1 + 0.045 * Math.sin(i * 0.55 - drivePhase));
+      segment.routeDistance = this.travelDistance - distance;
+      this.trajectory.sample(
+        segment.routeDistance,
+        segment.position,
+        this.tangent,
       );
-      this.tangent
-        .subVectors(this.samples[cursor - 1], this.samples[cursor])
-        .normalize();
+      if (i === 0) {
+        this.heading = Math.atan2(-this.tangent.z, this.tangent.x);
+        rising = this.tangent.y > 0;
+      }
       this.right.crossVectors(UP, this.tangent).normalize();
       this.up.crossVectors(this.tangent, this.right).normalize();
       this.matrix.makeBasis(this.right, this.up, this.tangent);
@@ -207,9 +208,12 @@ export class Simulation {
       if (segment.submerged) this.submergedCount++;
     }
     const head = this.segments[0];
+    const tail = this.segments[RING_COUNT - 1];
+    this.focus.copy(head.position).lerp(tail.position, 0.5);
+    const ground = terrainHeight(this.focus.x, this.focus.z);
+    this.focus.y = ground + Math.min(0, this.focus.y - ground) * 0.4;
     const height =
       head.position.y - terrainHeight(head.position.x, head.position.z);
-    const rising = -Math.sin(time * 0.24 + 0.92) > 0;
     this.phase =
       this.submergedCount === RING_COUNT
         ? 'Subsurface traversal'

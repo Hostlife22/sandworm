@@ -15,7 +15,7 @@ export function Atlas({ simulation }: { simulation: Simulation }) {
   useEffect(() => {
     const timer = setInterval(() => {
       if (live.current)
-        live.current.textContent = `${String(Math.floor(simulation.poseTime)).padStart(4, '0')} s / ${simulation.submergedCount.toString().padStart(2, '0')} BELOW DATUM`;
+        live.current.textContent = `${String(Math.floor(simulation.poseTime)).padStart(4, '0')} s / ${Math.round((simulation.travelDistance * 187) / 7)} m TRAVEL / ${simulation.submergedCount.toString().padStart(2, '0')} BELOW DATUM`;
     }, 100);
     return () => clearInterval(timer);
   }, [simulation]);
