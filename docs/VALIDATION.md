@@ -69,9 +69,9 @@ by the application or included in the production build.
 
 ## Deployment
 
-GitHub Actions workflows are supplied for checks and a manually triggered Pages
-publication. The repository is pushed to `Hostlife22/sandworm`; no Pages deployment
-is claimed. Source video rights are separate from the MIT-licensed implementation.
+GitHub Actions runs quality checks, then publishes `master` through the reusable
+Pages workflow. Pull requests do not deploy; manual publication is also available.
+See the repository Actions history for deployment results. Source video rights are separate from the MIT-licensed implementation.
 
 ## Recorded checks and performance
 

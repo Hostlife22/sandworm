@@ -22,3 +22,11 @@ jobs:
           path: |
             playwright-report/
             docs/screenshots/
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml

@@ -106,7 +106,35 @@ test('WebGL fallback keeps atlas and recovery visible', async ({ page }) => {
     page.getByRole('heading', { name: 'SANDWORM MK-X' }),
   ).toBeVisible();
 });
-test('reference screenshots and renderer measurements', async ({ page }) => {
+for (const [camera, name] of [
+  ['front', '01-front'],
+  ['side', '02-side'],
+  ['aerial', '03-aerial'],
+  ['chase', '04-chase'],
+  ['orbit', '05-orbit'],
+] as const) {
+  test(`reference screenshot: ${camera}`, async ({ page }) => {
+    test.setTimeout(90000);
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text());
+    });
+    await ready(page);
+    await freeze(page);
+    await page.getByRole('button', { name: camera, exact: true }).click();
+    await settle(page);
+    await expect(page.locator('canvas')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: '3D rendering is unavailable' }),
+    ).toHaveCount(0);
+    await page.screenshot({ path: `docs/screenshots/${name}.png` });
+    expect(errors).toEqual([]);
+  });
+}
+test('subsurface and mobile screenshots and renderer measurements', async ({
+  page,
+}) => {
   test.setTimeout(180000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -115,26 +143,6 @@ test('reference screenshots and renderer measurements', async ({ page }) => {
   });
   await ready(page);
   await freeze(page);
-  await settle(page);
-  await expect(page.locator('canvas')).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: '3D rendering is unavailable' }),
-  ).toHaveCount(0);
-  await page.screenshot({ path: 'docs/screenshots/01-front.png' });
-  for (const [camera, name] of [
-    ['side', '02-side'],
-    ['aerial', '03-aerial'],
-    ['chase', '04-chase'],
-    ['orbit', '05-orbit'],
-  ] as const) {
-    await page.getByRole('button', { name: camera, exact: true }).click();
-    await settle(page);
-    await expect(page.locator('canvas')).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: '3D rendering is unavailable' }),
-    ).toHaveCount(0);
-    await page.screenshot({ path: `docs/screenshots/${name}.png` });
-  }
   await page.getByRole('button', { name: 'side', exact: true }).click();
   await page.getByRole('button', { name: 'X-RAY', exact: true }).click();
   await freeze(page, 7);

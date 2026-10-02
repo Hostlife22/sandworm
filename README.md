@@ -123,10 +123,9 @@ terrain mask accuracy and tour commands.
 
 [Validation and visual comparison](docs/VALIDATION.md) records actual results and
 limitations. [Motion and materials review](docs/MOTION_REVIEW.md) explains the
-forward-travel correction and includes a fixed-camera comparison. GitHub CI runs `npm ci`, all quality checks and Chromium tests. The
-manual **Publish GitHub Pages** workflow builds and deploys `/sandworm/`; select
-GitHub Actions as the repository's Pages source before running it. No publication
-is implied by a successful local build.
+forward-travel correction and includes a fixed-camera comparison. GitHub CI runs `npm ci`, all quality checks and Chromium tests. Successful checks on `master` automatically call **Publish GitHub Pages** and
+deploy `/sandworm/`. Pull requests run checks without publishing. The Pages workflow
+can also be started manually; GitHub Actions must be selected as the Pages source.
 
 ## Accessibility
 
@@ -162,3 +161,10 @@ The supplied reference video and third-party dependencies are excluded from this
 grant. Bundled Barlow Condensed and IBM Plex Mono fonts retain their OFL licenses
 in their `@fontsource` packages and in `public/licenses/`. This fictional concept has no affiliation with Dune
 rights holders.
+
+## Project policies
+
+- [Contributing](CONTRIBUTING.md)
+- [MIT license](LICENSE)
+- [Security](SECURITY.md)
+- [Accessibility](ACCESSIBILITY.md)

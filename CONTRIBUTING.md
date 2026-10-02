@@ -29,4 +29,12 @@ mobile layout and WebGL fallback. Document measured performance and its environm
 do not infer a universal frame rate from one machine.
 
 The repository base path is `/sandworm/`. Update `vite.config.ts`, Playwright URLs and
-README together if the repository is renamed. The Pages workflow is manual.
+README together if the repository is renamed. Successful CI on `master` triggers
+Pages publication. Pull requests do not deploy. A manual Pages run is also available.
+
+## Policies
+
+Original contributions are covered by the [MIT license](LICENSE). Keep third-party
+license notices and verify asset rights before adding files. Follow the
+[security reporting policy](SECURITY.md) for vulnerabilities and the
+[accessibility guidance](ACCESSIBILITY.md) for UI changes.
